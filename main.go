@@ -1,16 +1,32 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"encoding/json"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
-func main() {
-	http.HandleFunc("/", handler)
-	log.Fatal(http.ListenAndServe("0.0.0.0:9000", nil))
+type User struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "URL.Path = %q\n", r.URL.Path)
+func getUser(w http.ResponseWriter, r *http.Request) {
+	var user User
+	params := mux.Vars(r)
+
+	user = User{
+		ID:   params["id"],
+		Name: "FullName",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
+}
+
+func main() {
+	router := mux.NewRouter()
+	router.HandleFunc("/user/{id:[0-9]+}", getUser).Methods("GET")
+	http.ListenAndServe(":9000", router)
 }
