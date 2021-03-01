@@ -11,4 +11,6 @@ COPY . .
 RUN go get -v github.com/gorilla/mux
 RUN go build -o app .
 
+EXPOSE 80
+
 CMD ["/app/app"]
