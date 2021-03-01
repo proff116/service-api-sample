@@ -28,5 +28,5 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/user/{id:[0-9]+}", getUser).Methods("GET")
-	http.ListenAndServe(":9000", router)
+	http.ListenAndServe(":80", router)
 }
