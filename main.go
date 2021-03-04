@@ -1,62 +1,99 @@
 package main
 
 import (
-	"fmt"
-	"encoding/json"
+	"io"
 	"net/http"
-	"io/ioutil"
+	"os"
 
-	"github.com/gorilla/mux"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
+//Post is ...
+type Post struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+	Text  string `json:"text"`
+}
+
+func getPost(c echo.Context) error {
+	id := c.Param("id")
+
+	var post = Post{
+		ID:    id,
+		Title: "Title",
+		Text:  "Text",
+	}
+
+	return c.JSON(http.StatusOK, post)
+}
+
+//User is ...
 type User struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-func getUser(w http.ResponseWriter, r *http.Request) {
-	var user User
-	params := mux.Vars(r)
+func getUser(c echo.Context) error {
+	id := c.Param("id")
 
-	user = User{
-		ID:   params["id"],
-		Name: "FullName",
+	var user = User{
+		ID:   id,
+		Name: "Name",
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	return c.JSON(http.StatusOK, user)
 }
 
-func uploadFile(w http.ResponseWriter, r *http.Request) {
-	r.ParseMultipartForm(0 << 50)
-
-	file, handler, err := r.FormFile("File")
+//File is ...
+func uploadFile(c echo.Context) error {
+	file, err := c.FormFile("file")
 	if err != nil {
-        fmt.Println("Error Retrieving the File")
-        fmt.Println(err)
-        return
-    }
-	defer file.Close()
+		return err
+	}
+	src, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer src.Close()
 
-	tempFile, err := ioutil.TempFile("", handler.Filename)
-    if err != nil {
-        fmt.Println(err)
-    }
-	defer tempFile.Close()
+	// Destination
+	dst, err := os.Create(file.Filename)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
 
-	fileBytes, err := ioutil.ReadAll(file)
-    if err != nil {
-        fmt.Println(err)
-    }
+	// Copy
+	if _, err = io.Copy(dst, src); err != nil {
+		return err
+	}
 
-	ioutil.WriteFile(handler.Filename, fileBytes, 0644)
+	return c.HTML(http.StatusOK, "File uploaded")
+}
 
+func downloadFile(c echo.Context) error {
+	file := c.Param("file")
+	return c.Attachment(file, file)
 }
 
 func main() {
-	router := mux.NewRouter()
-	router.HandleFunc("/user/{id:[0-9]+}", getUser).Methods("GET")
-	router.HandleFunc("/upload", uploadFile).Methods("POST")
-	router.PathPrefix("/download/").Handler(http.StripPrefix("/download", http.FileServer(http.Dir(""))))
-	http.ListenAndServe(":80", router)
+	e := echo.New()
+
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	e.Static("/", "public")
+
+	// Route Posts
+	e.GET("/posts/:id", getPost)
+
+	// Route Users
+	e.GET("/users/:id", getUser)
+
+	// Route Files
+	e.POST("/upload", uploadFile)
+	e.GET("/download/:file", downloadFile)
+
+	e.Logger.Fatal(e.Start(":80"))
 }
