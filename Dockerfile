@@ -8,7 +8,7 @@ RUN mkdir /app
 WORKDIR /app
 COPY . .
 
-RUN go get -v github.com/gorilla/mux
+RUN go get -v github.com/labstack/echo/v4 github.com/labstack/echo/v4/middleware
 RUN go build -o app .
 
 EXPOSE 80

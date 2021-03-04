@@ -1,9 +1,12 @@
 package main
 
 import (
+	"io"
 	"net/http"
+	"os"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 //Post is ...
@@ -42,14 +45,55 @@ func getUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, user)
 }
 
+//File is ...
+func uploadFile(c echo.Context) error {
+	file, err := c.FormFile("file")
+	if err != nil {
+		return err
+	}
+	src, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	// Destination
+	dst, err := os.Create(file.Filename)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+
+	// Copy
+	if _, err = io.Copy(dst, src); err != nil {
+		return err
+	}
+
+	return c.HTML(http.StatusOK, "File uploaded")
+}
+
+func downloadFile(c echo.Context) error {
+	file := c.Param("file")
+	return c.Attachment(file, file)
+}
+
 func main() {
 	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
 
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	e.Static("/", "public")
+
+	// Route Posts
 	e.GET("/posts/:id", getPost)
+
+	// Route Users
 	e.GET("/users/:id", getUser)
+
+	// Route Files
+	e.POST("/upload", uploadFile)
+	e.GET("/download/:file", downloadFile)
 
 	e.Logger.Fatal(e.Start(":80"))
 }
