@@ -1,62 +1,55 @@
 package main
 
 import (
-	"fmt"
-	"encoding/json"
 	"net/http"
-	"io/ioutil"
 
-	"github.com/gorilla/mux"
+	"github.com/labstack/echo/v4"
 )
 
+//Post is ...
+type Post struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+	Text  string `json:"text"`
+}
+
+func getPost(c echo.Context) error {
+	id := c.Param("id")
+
+	var post = Post{
+		ID:    id,
+		Title: "Title",
+		Text:  "Text",
+	}
+
+	return c.JSON(http.StatusOK, post)
+}
+
+//User is ...
 type User struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-func getUser(w http.ResponseWriter, r *http.Request) {
-	var user User
-	params := mux.Vars(r)
+func getUser(c echo.Context) error {
+	id := c.Param("id")
 
-	user = User{
-		ID:   params["id"],
-		Name: "FullName",
+	var user = User{
+		ID:   id,
+		Name: "Name",
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
-}
-
-func uploadFile(w http.ResponseWriter, r *http.Request) {
-	r.ParseMultipartForm(0 << 50)
-
-	file, handler, err := r.FormFile("File")
-	if err != nil {
-        fmt.Println("Error Retrieving the File")
-        fmt.Println(err)
-        return
-    }
-	defer file.Close()
-
-	tempFile, err := ioutil.TempFile("", handler.Filename)
-    if err != nil {
-        fmt.Println(err)
-    }
-	defer tempFile.Close()
-
-	fileBytes, err := ioutil.ReadAll(file)
-    if err != nil {
-        fmt.Println(err)
-    }
-
-	ioutil.WriteFile(handler.Filename, fileBytes, 0644)
-
+	return c.JSON(http.StatusOK, user)
 }
 
 func main() {
-	router := mux.NewRouter()
-	router.HandleFunc("/user/{id:[0-9]+}", getUser).Methods("GET")
-	router.HandleFunc("/upload", uploadFile).Methods("POST")
-	router.PathPrefix("/download/").Handler(http.StripPrefix("/download", http.FileServer(http.Dir(""))))
-	http.ListenAndServe(":80", router)
+	e := echo.New()
+	e.GET("/", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Hello, World!")
+	})
+
+	e.GET("/posts/:id", getPost)
+	e.GET("/users/:id", getUser)
+
+	e.Logger.Fatal(e.Start(":80"))
 }
