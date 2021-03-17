@@ -16,6 +16,28 @@ type Post struct {
 	Text  string `json:"text"`
 }
 
+func getPosts(c echo.Context) error {
+	listAr := []Post{
+		{
+			ID:    "1",
+			Title: "First post",
+			Text:  "Small content.",
+		},
+		{
+			ID:    "2",
+			Title: "Long post",
+			Text:  "The second post present a long content. It can be to easy test forms on small devices.",
+		},
+		{
+			ID:    "3",
+			Title: "Third post",
+			Text:  "Any content",
+		},
+	}
+
+	return c.JSON(http.StatusOK, listAr)
+}
+
 func getPost(c echo.Context) error {
 	id := c.Param("id")
 
@@ -83,9 +105,8 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.Static("/", "public")
-
 	// Route Posts
+	e.GET("/posts", getPosts)
 	e.GET("/posts/:id", getPost)
 
 	// Route Users
