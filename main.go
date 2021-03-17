@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -11,27 +12,31 @@ import (
 
 //Post is ...
 type Post struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-	Text  string `json:"text"`
+	ID      string    `json:"id"`
+	Time    time.Time `json:"time"`
+	Title   string    `json:"title"`
+	Content string    `json:"content"`
 }
 
 func getPosts(c echo.Context) error {
 	listAr := []Post{
 		{
-			ID:    "1",
-			Title: "First post",
-			Text:  "Small content.",
+			ID:      "1",
+			Time:    time.Now(),
+			Title:   "First post",
+			Content: "Small content.",
 		},
 		{
-			ID:    "2",
-			Title: "Long post",
-			Text:  "The second post present a long content. It can be to easy test forms on small devices.",
+			ID:      "2",
+			Time:    time.Now(),
+			Title:   "Long post",
+			Content: "The second post present a long content. It can be to easy test forms on small devices.",
 		},
 		{
-			ID:    "3",
-			Title: "Third post",
-			Text:  "Any content",
+			ID:      "3",
+			Time:    time.Now(),
+			Title:   "Third post",
+			Content: "Any content",
 		},
 	}
 
@@ -42,9 +47,10 @@ func getPost(c echo.Context) error {
 	id := c.Param("id")
 
 	var post = Post{
-		ID:    id,
-		Title: "Title",
-		Text:  "Text",
+		ID:      id,
+		Time:    time.Now(),
+		Title:   "Title",
+		Content: "Content",
 	}
 
 	return c.JSON(http.StatusOK, post)
